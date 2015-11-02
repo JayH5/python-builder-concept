@@ -8,7 +8,7 @@ import pystache
 import yaml
 
 
-def log_docker_stream(response_stream):
+def log_docker_json_stream(response_stream):
     for entry in response_stream:
         content = json.loads(entry)
         if 'stream' in content:
@@ -17,6 +17,11 @@ def log_docker_stream(response_stream):
             raise RuntimeError(str(content))
         else:
             raise RuntimeError('Unknown response from Docker daemon')
+
+
+def log_docker_stream(response_stream):
+    for entry in response_stream:
+        sys.stdout.write(entry)
 
 
 class Workspace(object):
@@ -108,7 +113,7 @@ class Builder(object):
             rm=True,
             pull=False,
             dockerfile='builder.dockerfile')
-        log_docker_stream(response)
+        log_docker_json_stream(response)
 
     def run_builder_container(self):
         print('Running builder container...')
@@ -121,3 +126,6 @@ class Builder(object):
         )
 
         self.docker_client.start(container=container.get('Id'))
+        response = self.docker_client.attach(container=container.get('Id'),
+                                             logs=True, stream=True)
+        log_docker_stream(response)
