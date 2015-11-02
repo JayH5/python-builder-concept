@@ -3,9 +3,9 @@ from __future__ import print_function, unicode_literals
 import json
 import sys
 
-import yaml
-
 import docker
+import pystache
+import yaml
 
 
 def log_docker_stream(response_stream):
@@ -69,33 +69,13 @@ class Builder(object):
 
     def build(self):
         self.copy_source()
-        self.copy_buildscript()
         self.write_builder_dockerfile()
         self.build_builder_image()
-        self.run_builder_container()
+        #self.run_builder_container()
 
     def copy_source(self):
         print('Copying source to workspace...')
         self.source_path.copy(self.workspace.source_path)
-
-    def copy_buildscript(self):
-        print('Copying buildscript to workspace...')
-        dest = self.workspace.path.join('buildscript.sh')
-        if self.config.buildscript is not None:
-            src = self.workspace.source_path.join(self.config.buildscript)
-            src.copy(dest)
-        else:
-            pass
-            # TODO: fix this with /tmp directories
-            # content = self.generate_default_buildscript()
-            # dest.write(content)
-            # dest.chmod(755)
-
-    def generate_default_buildscript(self):
-        return """#!/bin/bash
-cd /source
-pip wheel .
-"""
 
     def write_builder_dockerfile(self):
         print('Writing builder dockerfile...')
@@ -104,24 +84,18 @@ pip wheel .
         path.write(content)
 
     def generate_builder_dockerfile(self):
-        base_image = 'base-cpython'
-        build_deps = ' '.join(sorted(self.config.build_dependencies))
-        return """FROM {base_image}
+        with open('templates/builder.dockerfile.mustache') as template_file:
+            template = template_file.read()
 
-RUN $APT_GET_INSTALL {build_deps}
-
-RUN pip --no-cache-dir install wheel
-
-VOLUME /build
-COPY ./source /source
-COPY ./buildscript.sh /buildscript.sh
-
-ENV WHEELHOUSE=/build/wheelhouse
-ENV PIP_WHEEL_DIR=$WHEELHOUSE
-ENV PIP_FIND_LINKS=$WHEELHOUSE
-
-CMD /buildscript.sh
-""".format(base_image=base_image, build_deps=build_deps)
+        data = {
+            'base_image': 'base-cpython',
+            'has_dependencies?': bool(self.config.build_dependencies),
+            'dependencies': [{'package': dep} for dep in
+                             sorted(self.config.build_dependencies)]
+        }
+        if self.config.buildscript:
+            data['buildscript?'] = {'path': self.config.buildscript}
+        return pystache.render(template, data)
 
     def builder_tag(self):
         return "%s-builder" % (self.config.name)

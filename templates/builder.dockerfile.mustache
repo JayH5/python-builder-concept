@@ -1,0 +1,24 @@
+FROM {{base_image}}
+
+{{#has_dependencies?}}
+RUN $APT_GET_INSTALL{{#dependencies}} \
+    {{package}}{{/dependencies}}
+{{/has_dependencies?}}
+
+VOLUME /build
+COPY ./source /source
+{{#buildscript?}}
+COPY ./source/{{path}} /buildscript.sh
+{{/buildscript?}}
+
+ENV WHEELHOUSE=/build/wheelhouse \
+    PIP_WHEEL_DIR=/build/wheelhouse \
+    PIP_FIND_LINKS=/build/wheelhouse
+
+{{#buildscript?}}
+CMD /buildscript.sh
+{{/buildscript?}}
+{{^buildscript?}}
+CMD cd /source && \
+    pip wheel .
+{{/buildscript?}}

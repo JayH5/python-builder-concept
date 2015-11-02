@@ -19,6 +19,7 @@ setup(name='python-builder-concept',
           'click',
           'docker-py',
           'py',
+          'pystache',
           'PyYAML',
       ],
       tests_require=[
