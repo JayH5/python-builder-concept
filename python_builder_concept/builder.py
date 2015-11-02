@@ -1,4 +1,5 @@
 from __future__ import print_function, unicode_literals
+from pkg_resources import find_distributions
 
 import json
 import sys
@@ -24,6 +25,18 @@ def log_docker_stream(response_stream):
         sys.stdout.write(entry)
 
 
+def get_project_distribution(project_path):
+    dists = list(find_distributions(project_path))
+    if not dists:
+        raise RuntimeError('No distributions could be found at %s' % (
+            project_path))
+    if len(dists) > 1:
+        raise RuntimeError('Multiple distributions found at %s' % (
+            project_path))
+
+    return dists[0]
+
+
 class Workspace(object):
     def __init__(self, path):
         self.path = path
@@ -37,9 +50,8 @@ class Workspace(object):
 
 
 class BuildConfig(object):
-    def __init__(self, name, buildscript, postinstall, build_dependencies,
+    def __init__(self, buildscript, postinstall, build_dependencies,
                  runtime_dependencies):
-        self.name = name
         self.buildscript = buildscript
         self.postinstall = postinstall
         self.build_dependencies = build_dependencies
@@ -56,7 +68,6 @@ class BuildConfig(object):
             runtime_deps = deps.get('runtime')
 
         return BuildConfig(
-            yaml_content['name'],
             yaml_content.get('buildscript'),
             yaml_content.get('postinstall'),
             build_deps,
@@ -102,13 +113,14 @@ class Builder(object):
             data['buildscript?'] = {'path': self.config.buildscript}
         return pystache.render(template, data)
 
-    def builder_tag(self):
-        return "%s-builder" % (self.config.name)
+    def builder_image_tag(self):
+        dist = get_project_distribution(str(self.workspace.source_path))
+        return "%s-builder:%s" % (dist.project_name, dist.version)
 
     def build_builder_image(self):
         print('Building builder image...')
         response = self.docker_client.build(
-            tag=self.builder_tag(),
+            tag=self.builder_image_tag(),
             path=str(self.workspace.path),
             rm=True,
             pull=False,
@@ -121,7 +133,7 @@ class Builder(object):
             '%s:/build' % (self.workspace.build_path,)
         ])
         container = self.docker_client.create_container(
-            image=self.builder_tag(),
+            image=self.builder_image_tag(),
             host_config=host_config
         )
 
