@@ -1,4 +1,5 @@
 #!/bin/bash -e
+set -x
 apt-get update
 apt-get install -qyy -o APT::Install-Recommends=false -o APT::Install-Suggests=false $@
 apt-get clean

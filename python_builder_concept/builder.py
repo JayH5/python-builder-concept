@@ -71,7 +71,7 @@ class Builder(object):
         self.copy_source()
         self.write_builder_dockerfile()
         self.build_builder_image()
-        #self.run_builder_container()
+        self.run_builder_container()
 
     def copy_source(self):
         print('Copying source to workspace...')
@@ -88,7 +88,7 @@ class Builder(object):
             template = template_file.read()
 
         data = {
-            'base_image': 'base-cpython',
+            'base_image': 'base-cpython-ubuntu',
             'has_dependencies?': bool(self.config.build_dependencies),
             'dependencies': [{'package': dep} for dep in
                              sorted(self.config.build_dependencies)]
