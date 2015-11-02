@@ -1,4 +1,5 @@
 from __future__ import print_function, unicode_literals
+from datetime import datetime
 from pkg_resources import find_distributions
 
 import json
@@ -115,7 +116,7 @@ class Builder(object):
 
     def builder_image_tag(self):
         dist = get_project_distribution(str(self.workspace.source_path))
-        return "%s-builder:%s" % (dist.project_name, dist.version)
+        return '%s-builder:%s' % (dist.project_name, dist.version)
 
     def build_builder_image(self):
         print('Building builder image...')
@@ -127,6 +128,11 @@ class Builder(object):
             dockerfile='builder.dockerfile')
         log_docker_json_stream(response)
 
+    def builder_container_name(self):
+        dist = get_project_distribution(str(self.workspace.source_path))
+        return '%s-build-%s' % (
+            dist.project_name, datetime.utcnow().strftime('%Y-%m-%dT%H-%M'))
+
     def run_builder_container(self):
         print('Running builder container...')
         # Create the container...
@@ -135,6 +141,7 @@ class Builder(object):
         ])
         container = self.docker_client.create_container(
             image=self.builder_image_tag(),
+            name=self.builder_container_name(),
             host_config=host_config
         )
 
