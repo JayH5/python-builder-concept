@@ -129,6 +129,7 @@ class Builder(object):
 
     def run_builder_container(self):
         print('Running builder container...')
+        # Create the container...
         host_config = self.docker_client.create_host_config(binds=[
             '%s:/build' % (self.workspace.build_path,)
         ])
@@ -137,7 +138,13 @@ class Builder(object):
             host_config=host_config
         )
 
-        self.docker_client.start(container=container.get('Id'))
-        response = self.docker_client.attach(container=container.get('Id'),
+        # Start it...
+        container_id = container['Id']
+        self.docker_client.start(container=container_id)
+        response = self.docker_client.attach(container=container_id,
                                              logs=True, stream=True)
         log_docker_stream(response)
+
+        # Clean it up...
+        self.docker_client.remove_container(container=container_id,
+                                            v=True)
