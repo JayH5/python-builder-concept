@@ -1,7 +1,11 @@
 FROM {{base_image}}
 
+RUN pip install --no-cache-dir setuptools virtualenv wheel
+RUN virtualenv /appenv && \
+    . /appenv/bin/activate
+
 {{#dependencies?}}
-RUN $APT_GET_INSTALL{{#packages}} \
+RUN $PKG_INSTALL{{#packages}} \
     {{package}}{{/packages}}
 {{/dependencies?}}
 

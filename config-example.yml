@@ -1,13 +1,8 @@
 deb:
   # The base image is the image to use for all the Docker containers
-  base_image: base-cpython-ubuntu
+  base_image: base-cpython-ubuntu14.04
   # The base dependencies will be installed by default
   base_dependencies:
       build:
         - build-essential
         - python-dev
-        - libffi-dev
-        - libssl-dev
-      runtime:
-        - libffi6
-        - openssl

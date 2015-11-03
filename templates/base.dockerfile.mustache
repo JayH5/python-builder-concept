@@ -1,9 +1,0 @@
-FROM {{base_image}}
-
-{{#has_dependencies?}}
-RUN $APT_GET_INSTALL{{#dependencies}} \
-    {{package}}{{/dependencies}}
-{{/has_dependencies?}}
-
-RUN pip --no-cache-dir install virtualenv && \
-    virtualenv -p $PYTHON /appenv
