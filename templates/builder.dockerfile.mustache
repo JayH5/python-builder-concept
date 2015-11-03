@@ -1,9 +1,9 @@
 FROM {{base_image}}
 
-{{#has_dependencies?}}
-RUN $APT_GET_INSTALL{{#dependencies}} \
-    {{package}}{{/dependencies}}
-{{/has_dependencies?}}
+{{#dependencies?}}
+RUN $APT_GET_INSTALL{{#packages}} \
+    {{package}}{{/packages}}
+{{/dependencies?}}
 
 VOLUME /build
 COPY ./source /source
@@ -19,6 +19,6 @@ ENV WHEELHOUSE=/build/wheelhouse \
 CMD /buildscript.sh
 {{/buildscript?}}
 {{^buildscript?}}
-CMD cd /source && \
-    pip wheel .
+WORKDIR /source
+CMD pip wheel .
 {{/buildscript?}}
