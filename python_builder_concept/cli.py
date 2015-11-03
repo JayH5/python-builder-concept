@@ -22,12 +22,12 @@ from python_builder_concept.config import load_configs
                 type=click.Path(file_okay=False, resolve_path=True))
 def main(config, build_file, docker_socket, source_dir, workspace_dir):
     workspace = Workspace(LocalPath(workspace_dir))
-    workspace.create()
+    workspace.prepare(LocalPath(source_dir))
 
-    source_path = LocalPath(source_dir)
-    configs = load_configs(LocalPath(config), source_path.join(build_file))
+    configs = load_configs(LocalPath(config),
+                           workspace.source_path.join(build_file))
 
     docker_client = docker.Client(base_url=docker_socket)
 
-    builder = Builder(configs, workspace, source_path, docker_client)
+    builder = Builder(configs, workspace, docker_client)
     builder.build()
